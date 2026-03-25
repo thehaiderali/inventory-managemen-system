@@ -1,8 +1,12 @@
-const sql = require("mssql");
-const bcrypt = require("bcryptjs");
-const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, "../.env") });
+import sql from "mssql";
+import bcrypt from "bcryptjs";
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, "../.env") });
 
 const dbConfig = {
   user: process.env.DB_USER,
@@ -21,12 +25,12 @@ async function seed() {
   let pool;
 
   try {
-    console.log("🔌 Connecting to database...");
+    console.log("Connecting to database...");
     pool = await sql.connect(dbConfig);
     console.log("✅ Connected to database!");
 
     
-    console.log("📦 Seeding Categories...");
+    console.log("Seeding Categories...");
     await pool.request().query(`
       INSERT INTO Categories (CategoryName, Description) VALUES
       ('Electronics',       'Electronic devices and gadgets'),
@@ -38,7 +42,7 @@ async function seed() {
     console.log("✅ Categories seeded!");
 
     
-    console.log("🏭 Seeding Suppliers...");
+    console.log("Seeding Suppliers...");
     await pool.request().query(`
       INSERT INTO Suppliers (SupplierName, Phone, Email, Address) VALUES
       ('TechWorld Supplies',    '1-800-123-4567', 'info@techworld.com',         '123 Tech Avenue, Silicon Valley, CA'),
@@ -50,7 +54,7 @@ async function seed() {
     console.log("✅ Suppliers seeded!");
 
     
-    console.log("🏢 Seeding Warehouses...");
+    console.log("Seeding Warehouses...");
     await pool.request().query(`
       INSERT INTO Warehouses (WarehouseName, Location) VALUES
       ('Main Warehouse',   'New York, NY'),
@@ -61,7 +65,7 @@ async function seed() {
     console.log("✅ Warehouses seeded!");
 
     
-    console.log("👤 Seeding Users...");
+    console.log("Seeding Users...");
     const saltRounds = 10;
 
     const users = [
@@ -88,7 +92,7 @@ async function seed() {
     console.log("✅ Users seeded!");
 
     
-    console.log("👷 Seeding Staff...");
+    console.log("Seeding Staff...");
     await pool.request().query(`
       INSERT INTO Staff (StaffName, Role, Phone, Email, HireDate, UserID) VALUES
       ('Alice Cooper', 'Manager',           '555-1001', 'alice.cooper@company.com', '2022-01-15', 4),
@@ -100,7 +104,7 @@ async function seed() {
     console.log("✅ Staff seeded!");
 
     
-    console.log("🛒 Seeding Products...");
+    console.log("Seeding Products...");
     await pool.request().query(`
       INSERT INTO Products (ProductName, SKU, CategoryID, SupplierID, CostPrice, SellingPrice, IsActive) VALUES
       ('Laptop Pro 15',   'SKU-001', 1, 1, 600.00, 999.99, 1),
@@ -119,7 +123,7 @@ async function seed() {
     console.log("✅ Products seeded!");
 
     
-    console.log("🧑‍🤝‍🧑 Seeding Customers...");
+    console.log("Seeding Customers...");
     await pool.request().query(`
       INSERT INTO Customers (CustomerName, Phone, Email, Address) VALUES
       ('John Smith',      '555-0101', 'john.smith@email.com', '111 Main St, New York, NY'),
@@ -134,7 +138,7 @@ async function seed() {
     console.log("✅ Customers seeded!");
 
     
-    console.log("📊 Seeding Inventory...");
+    console.log("Seeding Inventory...");
     await pool.request().query(`
       INSERT INTO Inventory (ProductID, WarehouseID, Quantity, ReorderLevel) VALUES
       (1,  1, 45,  10),
@@ -155,7 +159,7 @@ async function seed() {
     console.log("✅ Inventory seeded!");
 
     
-    console.log("📋 Seeding Orders...");
+    console.log("Seeding Orders...");
     await pool.request().query(`
       INSERT INTO Orders (CustomerID, StaffID, OrderDate, Status, TotalAmount) VALUES
       (1, 1, '2024-01-10', 'Completed',  1029.97),
@@ -170,7 +174,7 @@ async function seed() {
     console.log("✅ Orders seeded!");
 
     
-    console.log("🛍️  Seeding OrderItems...");
+    console.log("Seeding OrderItems...");
     await pool.request().query(`
       INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice) VALUES
       (1,  1,  1, 999.99),
@@ -192,7 +196,7 @@ async function seed() {
     `);
     console.log("✅ OrderItems seeded!");
 
-    console.log("💳 Seeding Payments...");
+    console.log("Seeding Payments...");
     await pool.request().query(`
       INSERT INTO Payments (OrderID, PaymentDate, PaymentMethod, Amount, Status) VALUES
       (1, '2024-01-10', 'Credit Card', 1029.97, 'Completed'),
@@ -206,7 +210,7 @@ async function seed() {
     `);
     console.log("✅ Payments seeded!");
 
-    console.log("↩️  Seeding Returns...");
+    console.log("Seeding Returns...");
     await pool.request().query(`
       INSERT INTO Returns (OrderItemID, ReturnDate, Quantity, Reason, RefundAmount) VALUES
       (2,  '2024-01-15', 1, 'Defective',    29.99),
@@ -217,7 +221,7 @@ async function seed() {
 
 
     console.log("");
-    console.log("🎉 Database seeded successfully!");
+    console.log("Database seeded successfully!");
 
   } catch (err) {
     console.error("❌ Seeding failed:", err.message);
@@ -225,7 +229,7 @@ async function seed() {
   } finally {
     if (pool) {
       await pool.close();
-      console.log("🔌 Database connection closed.");
+      console.log("Database connection closed.");
     }
   }
 }
