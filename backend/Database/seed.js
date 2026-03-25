@@ -65,13 +65,12 @@ async function seed() {
     const saltRounds = 10;
 
     const users = [
-      { username: "admin",   email: "admin@ims.local",           password: "admin123",   role: "Admin"   },
-      { username: "manager", email: "manager@ims.local",         password: "manager123", role: "Manager" },
-      { username: "staff1",  email: "staff1@ims.local",          password: "staff123",   role: "Staff"   },
-      { username: "alice",   email: "alice.cooper@company.com",  password: "alice123",   role: "Manager" },
-      { username: "emma",    email: "emma.taylor@company.com",   password: "emma123",    role: "Manager" },
+    { username: "admin",   email: "admin@ims.local",          password: process.env.SEED_ADMIN_PASSWORD,   role: "Admin"   },
+    { username: "manager", email: "manager@ims.local",        password: process.env.SEED_MANAGER_PASSWORD, role: "Manager" },
+    { username: "staff1",  email: "staff1@ims.local",         password: process.env.SEED_STAFF_PASSWORD,   role: "Staff"   },
+    { username: "alice",   email: "alice.cooper@company.com", password: process.env.SEED_ALICE_PASSWORD,   role: "Manager" },
+    { username: "emma",    email: "emma.taylor@company.com",  password: process.env.SEED_EMMA_PASSWORD,    role: "Manager" },
     ];
-
     for (const user of users) {
       const hashedPassword = await bcrypt.hash(user.password, saltRounds);
       console.log(`   🔐 Hashing password for ${user.username}...`);
