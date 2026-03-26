@@ -1,9 +1,12 @@
 import React from 'react'
+import { Route, Routes } from 'react-router'
+import Home from './pages/Home'
 
 const App = () => {
   return (
-    <div className='text-4xl'>
-      App</div>
+    <Routes>
+      <Route path="/" element={<Home/>}/> 
+    </Routes>
   )
 }
 
