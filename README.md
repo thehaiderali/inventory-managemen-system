@@ -1,8 +1,8 @@
-# 📦 QuickStock
+# QuickStock
 
 ### Inventory & Sales Management System
 
-## 📖 Overview
+## Overview
 
 **QuickStock** is a database-driven inventory and sales management system built for small businesses. It streamlines day-to-day operations such as product tracking, sales processing, supplier management, and reporting through a structured and efficient database design.
 
@@ -11,7 +11,7 @@ Developed as part of **CL2005 – Database Systems Lab (Spring 2026)**
 
 ---
 
-## 👥 Team Members
+##  Team Members
 
 | Name           | Roll Number |
 | -------------- | ----------- |
@@ -64,21 +64,21 @@ Developed as part of **CL2005 – Database Systems Lab (Spring 2026)**
 
 ---
 
-## 🏗️ Database Design
+## Database Design:
 
-### 📌 Core Tables
+###  Core Tables
 
-## `Products`
-## `Categories`
-## `Stock`
-## `Suppliers`
-## `Customers`
-## `Orders`
-## `Sales`
-## `Returns`
-## `Payments`
-## `Staff`
-## `Users`
+* `Products`
+* `Categories`
+* `Stock`
+* `Suppliers`
+* `Customers`
+* `Orders`
+* `Sales`
+* `Returns`
+* `Payments`
+* `Staff`
+*`Users`
 
 
 ---
