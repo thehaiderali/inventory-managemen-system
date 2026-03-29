@@ -150,7 +150,3 @@ Feel free to fork the repo and submit a pull request.
 If you like this project, consider giving it a ⭐ on GitHub!
 
 ---
-## to clone this repo:
-1. clone the repo
-2. npm install
-3. npm install bcryptjs 
