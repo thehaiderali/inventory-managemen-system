@@ -1,4 +1,5 @@
 import Product from '../models/Product.js';
+import { connectDB, sql } from '../config/db.js';
 import { Category, Supplier, Warehouse, Customer, Inventory, Payment, Return } from '../models/index.js';
 
 // ── PRODUCTS ──────────────────────────────────────────────
@@ -110,6 +111,30 @@ export const getReturns = async (req, res) => {
 };
 
 export const createReturn = async (req, res) => {
-  try { res.status(201).json(await Return.create(req.body)); }
-  catch (err) { res.status(500).json({ message: err.message }); }
+  try {
+    const { orderId, productId, quantity, reason, refundAmount } = req.body;
+    
+    const pool = await connectDB();
+    const orderItemResult = await pool.request()
+      .input('OrderID', sql.Int, orderId)
+      .input('ProductID', sql.Int, productId)
+      .query(`SELECT OrderItemID FROM OrderItems WHERE OrderID = @OrderID AND ProductID = @ProductID`);
+    
+    if (!orderItemResult.recordset[0]) {
+      return res.status(404).json({ message: 'Order item not found' });
+    }
+    
+    const orderItemId = orderItemResult.recordset[0].OrderItemID;
+    
+    const returnData = await Return.create({
+      orderItemId,
+      quantity,
+      reason,
+      refundAmount
+    });
+    
+    res.status(201).json(returnData);
+  } catch (err) { 
+    res.status(500).json({ message: err.message }); 
+  }
 };

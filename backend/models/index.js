@@ -231,13 +231,27 @@ const Payment = {
 const Return = {
   async create({ orderItemId, quantity, reason, refundAmount }) {
     const pool = await connectDB();
-    const result = await pool.request()
-      .input('OrderItemID',  sql.Int,          orderItemId)
-      .input('Quantity',     sql.Int,          quantity)
-      .input('Reason',       sql.VarChar,      reason)
+    await pool.request()
+      .input('OrderItemID', sql.Int, orderItemId)
+      .input('Quantity', sql.Int, quantity)
+      .input('Reason', sql.VarChar, reason)
       .input('RefundAmount', sql.Decimal(10,2), refundAmount)
-      .query(`INSERT INTO Returns (OrderItemID, Quantity, Reason, RefundAmount) OUTPUT INSERTED.* VALUES (@OrderItemID, @Quantity, @Reason, @RefundAmount)`);
-    return result.recordset[0];
+      .query(`INSERT INTO Returns (OrderItemID, Quantity, Reason, RefundAmount) VALUES (@OrderItemID, @Quantity, @Reason, @RefundAmount)`);
+    
+    const idResult = await pool.request().query(`SELECT SCOPE_IDENTITY() AS ReturnID`);
+    const returnId = idResult.recordset[0].ReturnID;
+    
+    const returnResult = await pool.request()
+      .input('ReturnID', sql.Int, returnId)
+      .query(`
+        SELECT r.*, oi.ProductID, oi.OrderID, p.ProductName
+        FROM Returns r
+        JOIN OrderItems oi ON oi.OrderItemID = r.OrderItemID
+        JOIN Products p ON p.ProductID = oi.ProductID
+        WHERE r.ReturnID = @ReturnID
+      `);
+    
+    return returnResult.recordset[0];
   },
   async findAll() {
     const pool = await connectDB();
@@ -245,7 +259,7 @@ const Return = {
       SELECT r.*, oi.ProductID, oi.OrderID, p.ProductName
       FROM Returns r
       JOIN OrderItems oi ON oi.OrderItemID = r.OrderItemID
-      JOIN Products   p  ON p.ProductID   = oi.ProductID
+      JOIN Products p ON p.ProductID = oi.ProductID
     `);
     return result.recordset;
   },
