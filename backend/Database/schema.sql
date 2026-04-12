@@ -6,6 +6,7 @@ CREATE TABLE Categories (
     Description  VARCHAR(255)
 );
 
+
 -- Table: Suppliers
 CREATE TABLE Suppliers (
     SupplierID   INT           IDENTITY(1,1) PRIMARY KEY,
