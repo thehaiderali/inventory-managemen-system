@@ -31,8 +31,6 @@ export const getProducts = async (req, res) => {
     const { page, limit, offset } = paginate(req.query);
 
     const products = await Product.findAll({ categoryId, supplierId, isActive, search, limit, offset });
-
-    // NEW: add computed totalValue per product row
     const shaped = products.map(p => ({
       ...stripSensitive(p),
       totalValue: parseFloat(((p.Price || 0) * (p.StockQuantity || 0)).toFixed(2))
@@ -52,11 +50,9 @@ export const getProductById = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    // NEW: validate required fields
+
     const missing = validateRequired(req.body, ['name', 'price', 'categoryId', 'supplierId']);
     if (missing) return res.status(400).json({ message: `Missing required fields: ${missing.join(', ')}` });
-
-    // NEW: reject negative price or stock
     if (req.body.price < 0)         return res.status(400).json({ message: 'Price cannot be negative' });
     if ((req.body.stock ?? 0) < 0)  return res.status(400).json({ message: 'Stock cannot be negative' });
 
@@ -78,7 +74,6 @@ export const updateProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   try {
-    // NEW: soft delete audit — record who deleted and when
     await Product.delete(req.params.id, {
       deletedByUserId: req.user?.userId,
       deletedAt: new Date().toISOString()
@@ -86,8 +81,6 @@ export const deleteProduct = async (req, res) => {
     res.json({ message: 'Product deactivated', deletedBy: req.user?.userId, deletedAt: new Date().toISOString() });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
-
-// NEW: POST /products/bulk — create multiple products in one request
 export const bulkCreateProducts = async (req, res) => {
   try {
     const { products } = req.body;
@@ -113,8 +106,6 @@ export const bulkCreateProducts = async (req, res) => {
     res.status(207).json({ message: 'Bulk create complete', ...results });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
-
-// NEW: PATCH /products/bulk — update multiple products in one request
 export const bulkUpdateProducts = async (req, res) => {
   try {
     const { products } = req.body;
@@ -182,8 +173,6 @@ export const createSupplier = async (req, res) => {
   try {
     const missing = validateRequired(req.body, ['name', 'contactEmail']);
     if (missing) return res.status(400).json({ message: `Missing required fields: ${missing.join(', ')}` });
-
-    // NEW: basic email format check on supplier contact
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(req.body.contactEmail))
       return res.status(400).json({ message: 'Invalid contact email format' });
@@ -275,8 +264,6 @@ export const getInventory = async (req, res) => {
   try {
     const { page, limit, offset } = paginate(req.query);
     const items = await Inventory.findAll({ limit, offset });
-
-    // NEW: add computed totalValue per inventory row
     const shaped = items.map(i => ({
       ...i,
       totalValue: parseFloat(((i.Price || 0) * (i.QuantityOnHand || 0)).toFixed(2)),
@@ -303,23 +290,15 @@ export const getLowStock = async (req, res) => {
 export const adjustInventory = async (req, res) => {
   try {
     const { productId, warehouseId, quantity, type, referenceId } = req.body;
-
-    // NEW: validate required fields
     const missing = validateRequired(req.body, ['productId', 'warehouseId', 'quantity', 'type']);
     if (missing) return res.status(400).json({ message: `Missing required fields: ${missing.join(', ')}` });
-
-    // NEW: reject zero or negative quantity
     if (typeof quantity !== 'number' || quantity <= 0)
       return res.status(400).json({ message: 'Quantity must be a positive number' });
-
-    // NEW: whitelist adjustment types
     const allowedTypes = ['IN', 'OUT', 'ADJUSTMENT', 'RETURN', 'TRANSFER'];
     if (!allowedTypes.includes(type))
       return res.status(400).json({ message: `Type must be one of: ${allowedTypes.join(', ')}` });
 
     await Inventory.adjust({ productId, warehouseId, quantity, type, referenceId, createdByUserId: req.user.userId });
-
-    // NEW: stock alert — check level after adjustment and warn if low
     const currentStock = await Inventory.getStockLevel(productId, warehouseId);
     const alert = currentStock !== null && currentStock <= LOW_STOCK_THRESHOLD
       ? { lowStockAlert: true, currentStock, threshold: LOW_STOCK_THRESHOLD }
@@ -328,8 +307,6 @@ export const adjustInventory = async (req, res) => {
     res.json({ message: 'Inventory adjusted', ...alert });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
-
-// NEW: POST /inventory/bulk — adjust multiple inventory items at once
 export const bulkAdjustInventory = async (req, res) => {
   try {
     const { adjustments } = req.body;
@@ -350,8 +327,6 @@ export const bulkAdjustInventory = async (req, res) => {
       try {
         await Inventory.adjust({ ...adj, createdByUserId: req.user.userId });
         results.succeeded.push({ index: i, productId: adj.productId });
-
-        // stock alert per item
         const stock = await Inventory.getStockLevel(adj.productId, adj.warehouseId);
         if (stock !== null && stock <= LOW_STOCK_THRESHOLD)
           results.alerts.push({ productId: adj.productId, warehouseId: adj.warehouseId, currentStock: stock });
@@ -368,8 +343,6 @@ export const bulkAdjustInventory = async (req, res) => {
 export const getPaymentsByOrder = async (req, res) => {
   try {
     const payments = await Payment.findByOrder(req.params.orderId);
-
-    // NEW: add computed total paid across all payments for the order
     const totalPaid = payments.reduce((sum, p) => sum + (p.Amount || 0), 0);
 
     res.json({ orderId: req.params.orderId, totalPaid: parseFloat(totalPaid.toFixed(2)), data: payments });
@@ -378,14 +351,11 @@ export const getPaymentsByOrder = async (req, res) => {
 
 export const createPayment = async (req, res) => {
   try {
-    // NEW: validate required fields
     const missing = validateRequired(req.body, ['orderId', 'amount', 'method']);
     if (missing) return res.status(400).json({ message: `Missing required fields: ${missing.join(', ')}` });
 
     if (req.body.amount <= 0)
       return res.status(400).json({ message: 'Payment amount must be positive' });
-
-    // NEW: whitelist payment methods
     const allowedMethods = ['cash', 'card', 'bank_transfer', 'online', 'cheque'];
     if (!allowedMethods.includes(req.body.method))
       return res.status(400).json({ message: `Method must be one of: ${allowedMethods.join(', ')}` });
@@ -396,7 +366,6 @@ export const createPayment = async (req, res) => {
 
 export const updatePaymentStatus = async (req, res) => {
   try {
-    // NEW: whitelist valid payment statuses
     const allowedStatuses = ['pending', 'completed', 'failed', 'refunded', 'cancelled'];
     if (!allowedStatuses.includes(req.body.status))
       return res.status(400).json({ message: `Status must be one of: ${allowedStatuses.join(', ')}` });
@@ -417,16 +386,12 @@ export const getReturns = async (req, res) => {
 export const createReturn = async (req, res) => {
   try {
     const { orderId, productId, quantity, reason, refundAmount } = req.body;
-
-    // NEW: validate required fields
     const missing = validateRequired(req.body, ['orderId', 'productId', 'quantity', 'reason']);
     if (missing) return res.status(400).json({ message: `Missing required fields: ${missing.join(', ')}` });
 
-    // NEW: reject zero or negative return quantity
     if (quantity <= 0)
       return res.status(400).json({ message: 'Return quantity must be positive' });
 
-    // NEW: reject negative refund amount
     if (refundAmount !== undefined && refundAmount < 0)
       return res.status(400).json({ message: 'Refund amount cannot be negative' });
 
@@ -440,8 +405,6 @@ export const createReturn = async (req, res) => {
       return res.status(404).json({ message: 'Order item not found' });
 
     const { OrderItemID: orderItemId, Quantity: originalQty } = orderItemResult.recordset[0];
-
-    // NEW: check return quantity doesn't exceed original order quantity
     const existingReturnsResult = await pool.request()
       .input('OrderItemID', sql.Int, orderItemId)
       .query(`SELECT COALESCE(SUM(Quantity), 0) AS TotalReturned FROM Returns WHERE OrderItemID = @OrderItemID`);
@@ -458,8 +421,6 @@ export const createReturn = async (req, res) => {
       });
 
     const returnData = await Return.create({ orderItemId, quantity, reason, refundAmount });
-
-    // NEW: auto-trigger inventory adjustment for returned stock (fire-and-forget)
     Inventory.adjust({
       productId,
       warehouseId: null,
