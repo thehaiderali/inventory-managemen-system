@@ -33,22 +33,22 @@ const Product = {
     return result.recordset[0];
   },
 
-  async create({ productName, sku, categoryId, supplierId, costPrice, sellingPrice }) {
-    const pool = await connectDB();
-    const result = await pool.request()
-      .input('ProductName',  sql.VarChar,      productName)
-      .input('SKU',          sql.VarChar,      sku)
-      .input('CategoryID',   sql.Int,          categoryId)
-      .input('SupplierID',   sql.Int,          supplierId)
-      .input('CostPrice',    sql.Decimal(10,2), costPrice)
-      .input('SellingPrice', sql.Decimal(10,2), sellingPrice)
-      .query(`
-        INSERT INTO Products (ProductName, SKU, CategoryID, SupplierID, CostPrice, SellingPrice)
-        OUTPUT INSERTED.*
-        VALUES (@ProductName, @SKU, @CategoryID, @SupplierID, @CostPrice, @SellingPrice)
-      `);
-    return result.recordset[0];
-  },
+async create({ ProductName, SKU, CategoryID, SupplierID, CostPrice, SellingPrice }) {
+  const pool = await connectDB();
+  const result = await pool.request()
+    .input('ProductName',  sql.VarChar,       ProductName)
+    .input('SKU',          sql.VarChar,       SKU)
+    .input('CategoryID',   sql.Int,           CategoryID)
+    .input('SupplierID',   sql.Int,           SupplierID)
+    .input('CostPrice',    sql.Decimal(10,2), CostPrice)
+    .input('SellingPrice', sql.Decimal(10,2), SellingPrice)
+    .query(`
+      INSERT INTO Products (ProductName, SKU, CategoryID, SupplierID, CostPrice, SellingPrice)
+      OUTPUT INSERTED.*
+      VALUES (@ProductName, @SKU, @CategoryID, @SupplierID, @CostPrice, @SellingPrice)
+    `);
+  return result.recordset[0];
+},
 
   async update(id, { productName, sku, categoryId, supplierId, costPrice, sellingPrice, isActive }) {
     const pool = await connectDB();

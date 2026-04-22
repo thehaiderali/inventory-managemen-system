@@ -50,15 +50,28 @@ export const getProductById = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
+    // Map frontend field names to database field names
+    const productData = {
+      ProductName: req.body.name || req.body.ProductName,
+      SKU: req.body.sku || req.body.SKU,
+      CategoryID: req.body.categoryId || req.body.CategoryID,
+      SupplierID: req.body.supplierId || req.body.SupplierID,
+      CostPrice: req.body.costPrice || req.body.CostPrice,
+      SellingPrice: req.body.price || req.body.SellingPrice
+    };
 
-    const missing = validateRequired(req.body, ['name', 'price', 'categoryId', 'supplierId']);
+    const missing = validateRequired(productData, ['ProductName', 'SKU', 'CategoryID', 'SupplierID', 'CostPrice', 'SellingPrice']);
     if (missing) return res.status(400).json({ message: `Missing required fields: ${missing.join(', ')}` });
-    if (req.body.price < 0)         return res.status(400).json({ message: 'Price cannot be negative' });
-    if ((req.body.stock ?? 0) < 0)  return res.status(400).json({ message: 'Stock cannot be negative' });
+    
+    if (productData.SellingPrice < 0) return res.status(400).json({ message: 'Price cannot be negative' });
+    if ((productData.CostPrice ?? 0) < 0) return res.status(400).json({ message: 'Cost cannot be negative' });
 
-    const product = await Product.create(req.body);
+    const product = await Product.create(productData);
     res.status(201).json(stripSensitive(product));
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) { 
+    console.error('Create product error:', err);
+    res.status(500).json({ message: err.message }); 
+  }
 };
 
 export const updateProduct = async (req, res) => {
@@ -299,13 +312,12 @@ export const adjustInventory = async (req, res) => {
       return res.status(400).json({ message: `Type must be one of: ${allowedTypes.join(', ')}` });
 
     await Inventory.adjust({ productId, warehouseId, quantity, type, referenceId, createdByUserId: req.user.userId });
-    const currentStock = await Inventory.getStockLevel(productId, warehouseId);
-    const alert = currentStock !== null && currentStock <= LOW_STOCK_THRESHOLD
-      ? { lowStockAlert: true, currentStock, threshold: LOW_STOCK_THRESHOLD }
-      : { lowStockAlert: false, currentStock };
-
-    res.json({ message: 'Inventory adjusted', ...alert });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+    
+    res.json({ message: 'Inventory adjusted successfully' });
+  } catch (err) { 
+    console.error('Adjust inventory error:', err);
+    res.status(500).json({ message: err.message }); 
+  }
 };
 export const bulkAdjustInventory = async (req, res) => {
   try {

@@ -36,7 +36,7 @@ export const returnService = {
 
 export const authService = {
   register: (data) => api.post('/auth/register', data).then(res => res.data),
-  login: async (credentials) => {
+  login: async (credentials) => { 
     const res = await api.post('/auth/login', credentials);
     if (res.data.token) {
       localStorage.setItem('token', res.data.token);
