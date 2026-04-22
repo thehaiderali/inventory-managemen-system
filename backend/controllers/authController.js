@@ -20,8 +20,8 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'Invalid email format' });
 
     // NEW: role whitelist — only accept known roles
-    const allowedRoles = ['hero', 'admin', 'observer'];
-    const assignedRole = role && allowedRoles.includes(role) ? role : 'hero';
+    const allowedRoles = ['Admin', 'Manager', 'Staff'];
+    const assignedRole = role && allowedRoles.includes(role) ? role : 'Staff';
 
     const existing = await User.findByEmail(cleanEmail);
     if (existing)

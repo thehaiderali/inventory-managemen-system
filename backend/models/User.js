@@ -36,10 +36,10 @@ const User = {
   async create({ username, email, passwordHash, role = 'Staff' }) {
     const pool = await connectDB();
     const result = await pool.request()
-      .input('Username',     sql.VarChar, username)
-      .input('Email',        sql.VarChar, email)
+      .input('Username', sql.VarChar, username)
+      .input('Email', sql.VarChar, email)
       .input('PasswordHash', sql.VarChar, passwordHash)
-      .input('Role',         sql.VarChar, role)
+      .input('Role', sql.VarChar, role)
       .query(`
         INSERT INTO Users (Username, Email, PasswordHash, Role)
         OUTPUT INSERTED.UserID, INSERTED.Username, INSERTED.Email, INSERTED.Role, INSERTED.CreatedAt
@@ -51,16 +51,16 @@ const User = {
   async update(id, { username, email, role, isActive }) {
     const pool = await connectDB();
     const result = await pool.request()
-      .input('UserID',   sql.Int,     id)
+      .input('UserID', sql.Int, id)
       .input('Username', sql.VarChar, username)
-      .input('Email',    sql.VarChar, email)
-      .input('Role',     sql.VarChar, role)
-      .input('IsActive', sql.Bit,     isActive)
+      .input('Email', sql.VarChar, email)
+      .input('Role', sql.VarChar, role)
+      .input('IsActive', sql.Bit, isActive)
       .query(`
         UPDATE Users SET
           Username = COALESCE(@Username, Username),
-          Email    = COALESCE(@Email,    Email),
-          Role     = COALESCE(@Role,     Role),
+          Email = COALESCE(@Email, Email),
+          Role = COALESCE(@Role, Role),
           IsActive = COALESCE(@IsActive, IsActive)
         OUTPUT INSERTED.UserID, INSERTED.Username, INSERTED.Email, INSERTED.Role, INSERTED.IsActive
         WHERE UserID = @UserID
@@ -74,6 +74,13 @@ const User = {
       .input('UserID', sql.Int, id)
       .query(`DELETE FROM Users WHERE UserID = @UserID`);
   },
+
+  async updateLastLogin(userId) {
+    const pool = await connectDB();
+    await pool.request()
+      .input('UserID', sql.Int, userId)
+      .query(`UPDATE Users SET LastLogin = GETDATE() WHERE UserID = @UserID`);
+  }
 };
 
 export default User;
