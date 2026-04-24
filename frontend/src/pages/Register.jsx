@@ -104,13 +104,13 @@ export default function Register() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Role</label>
               <select
-                className="w-full h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-sm"
+                className="w-full h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               >
-                <option value="Staff">Staff</option>
-                <option value="Manager">Manager</option>
-                <option value="Admin">Admin</option>
+                <option value="Staff" className="dark:bg-gray-800 dark:text-gray-100">Staff</option>
+                <option value="Manager" className="dark:bg-gray-800 dark:text-gray-100">Manager</option>
+                <option value="Admin" className="dark:bg-gray-800 dark:text-gray-100">Admin</option>
               </select>
             </div>
             {error && (

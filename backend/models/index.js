@@ -167,37 +167,57 @@ const Inventory = {
     return result.recordset;
   },
   async adjust({ productId, warehouseId, quantity, type, referenceId, createdByUserId }) {
-    const pool = await connectDB();
-    const transaction = new sql.Transaction(pool);
-    await transaction.begin();
-    try {
+  const pool = await connectDB();
+  const transaction = new sql.Transaction(pool);
+  await transaction.begin();
+  try {
+    // Check if inventory record exists
+    const checkResult = await transaction.request()
+      .input('ProductID', sql.Int, productId)
+      .input('WarehouseID', sql.Int, warehouseId)
+      .query(`SELECT * FROM Inventory WHERE ProductID = @ProductID AND WarehouseID = @WarehouseID`);
+    
+    if (checkResult.recordset.length === 0) {
+      // Create new inventory record if doesn't exist
       await transaction.request()
-        .input('ProductID',   sql.Int, productId)
+        .input('ProductID', sql.Int, productId)
         .input('WarehouseID', sql.Int, warehouseId)
-        .input('Quantity',    sql.Int, quantity)
+        .input('Quantity', sql.Int, quantity > 0 ? quantity : 0)
+        .input('ReorderLevel', sql.Int, 5)
+        .query(`
+          INSERT INTO Inventory (ProductID, WarehouseID, Quantity, ReorderLevel)
+          VALUES (@ProductID, @WarehouseID, @Quantity, @ReorderLevel)
+        `);
+    } else {
+      // Update existing inventory
+      await transaction.request()
+        .input('ProductID', sql.Int, productId)
+        .input('WarehouseID', sql.Int, warehouseId)
+        .input('Quantity', sql.Int, quantity)
         .query(`
           UPDATE Inventory SET Quantity = Quantity + @Quantity, LastUpdated = GETDATE()
           WHERE ProductID = @ProductID AND WarehouseID = @WarehouseID
         `);
-
-      await transaction.request()
-        .input('ProductID',       sql.Int,     productId)
-        .input('WarehouseID',     sql.Int,     warehouseId)
-        .input('Quantity',        sql.Int,     quantity)
-        .input('TransactionType', sql.VarChar, type)
-        .input('ReferenceID',     sql.Int,     referenceId)
-        .input('CreatedByUserID', sql.Int,     createdByUserId)
-        .query(`
-          INSERT INTO InventoryTransactions (ProductID, WarehouseID, Quantity, TransactionType, ReferenceID, CreatedByUserID)
-          VALUES (@ProductID, @WarehouseID, @Quantity, @TransactionType, @ReferenceID, @CreatedByUserID)
-        `);
-
-      await transaction.commit();
-    } catch (err) {
-      await transaction.rollback();
-      throw err;
     }
-  },
+
+    await transaction.request()
+      .input('ProductID', sql.Int, productId)
+      .input('WarehouseID', sql.Int, warehouseId)
+      .input('Quantity', sql.Int, quantity)
+      .input('TransactionType', sql.VarChar, type)
+      .input('ReferenceID', sql.Int, referenceId)
+      .input('CreatedByUserID', sql.Int, createdByUserId)
+      .query(`
+        INSERT INTO InventoryTransactions (ProductID, WarehouseID, Quantity, TransactionType, ReferenceID, CreatedByUserID)
+        VALUES (@ProductID, @WarehouseID, @Quantity, @TransactionType, @ReferenceID, @CreatedByUserID)
+      `);
+
+    await transaction.commit();
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
+},
 };
 
 const Payment = {
