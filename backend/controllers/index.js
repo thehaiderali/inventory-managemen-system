@@ -305,9 +305,14 @@ export const adjustInventory = async (req, res) => {
     const { productId, warehouseId, quantity, type, referenceId } = req.body;
     const missing = validateRequired(req.body, ['productId', 'warehouseId', 'quantity', 'type']);
     if (missing) return res.status(400).json({ message: `Missing required fields: ${missing.join(', ')}` });
-    if (typeof quantity !== 'number' || quantity <= 0)
-      return res.status(400).json({ message: 'Quantity must be a positive number' });
-    const allowedTypes = ['IN', 'OUT', 'ADJUSTMENT', 'RETURN', 'TRANSFER'];
+    if (type === 'Transfer' || type === 'TRANSFER') {
+      if (typeof quantity !== 'number' || quantity === 0)
+        return res.status(400).json({ message: 'Quantity cannot be zero' });
+    } else {
+      if (typeof quantity !== 'number' || quantity <= 0)
+        return res.status(400).json({ message: 'Quantity must be a positive number' });
+    }
+    const allowedTypes = ['IN', 'OUT', 'ADJUSTMENT', 'RETURN', 'TRANSFER','Purchase', 'Sale', 'Return', 'Adjustment', 'Transfer'];
     if (!allowedTypes.includes(type))
       return res.status(400).json({ message: `Type must be one of: ${allowedTypes.join(', ')}` });
 

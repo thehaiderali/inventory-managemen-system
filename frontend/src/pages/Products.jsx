@@ -240,27 +240,32 @@ export default function Products() {
                 required 
               />
               <select 
-                className="w-full h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-sm" 
+                className="w-full h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700" 
                 value={formData.categoryId} 
                 onChange={(e) => setFormData({...formData, categoryId: e.target.value})}
                 required
               >
-                <option value="">Select Category</option>
+                <option value="" className="dark:bg-gray-800 dark:text-gray-100">Select Category</option>
                 {categories.map(c => (
-                  <option key={c.CategoryID} value={c.CategoryID}>{c.CategoryName}</option>
+                  <option key={c.CategoryID} value={c.CategoryID} className="dark:bg-gray-800 dark:text-gray-100">
+                    {c.CategoryName}
+                  </option>
                 ))}
               </select>
+              
               <select 
-                className="w-full h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-sm" 
+                className="w-full h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700" 
                 value={formData.supplierId} 
                 onChange={(e) => setFormData({...formData, supplierId: e.target.value})}
                 required
               >
-                <option value="">Select Supplier</option>
+                <option value="" className="dark:bg-gray-800 dark:text-gray-100">Select Supplier</option>
                 {suppliers.map(s => (
-                  <option key={s.SupplierID} value={s.SupplierID}>{s.SupplierName}</option>
+                  <option key={s.SupplierID} value={s.SupplierID} className="dark:bg-gray-800 dark:text-gray-100">
+                    {s.SupplierName}
+                  </option>
                 ))}
-              </select>
+                </select>
               <Input 
                 type="number" 
                 step="0.01" 

@@ -1,46 +1,74 @@
 import { useEffect, useState } from 'react';
-import { Eye, Package, Search } from 'lucide-react';
+import { Eye, Package, Search, Plus, X } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { orderService } from '../services';
+import { orderService, productService, customerService } from '../services';
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [customers, setCustomers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [formData, setFormData] = useState({
+    customerId: '',
+    items: [{ productId: '', quantity: 1, unitPrice: 0 }]
+  });
 
   useEffect(() => {
     fetchOrders();
+    fetchCustomers();
+    fetchProducts();
   }, []);
 
-   const fetchOrders = async () => {
-  try {
-    const response = await orderService.getAll();
-    console.log('Orders API response:', response);
-    
-    let ordersArray = [];
-    if (response && typeof response === 'object') {
-      if (Array.isArray(response)) {
-        ordersArray = response;
-      } else if (response.data && Array.isArray(response.data)) {
-        ordersArray = response.data;
-      } else if (response.recordset && Array.isArray(response.recordset)) {
-        ordersArray = response.recordset;
+  const fetchOrders = async () => {
+    try {
+      const response = await orderService.getAll();
+      console.log('Orders API response:', response);
+      
+      let ordersArray = [];
+      if (response && typeof response === 'object') {
+        if (Array.isArray(response)) {
+          ordersArray = response;
+        } else if (response.data && Array.isArray(response.data)) {
+          ordersArray = response.data;
+        } else if (response.recordset && Array.isArray(response.recordset)) {
+          ordersArray = response.recordset;
+        }
       }
+      
+      console.log('Orders loaded:', ordersArray);
+      setOrders(ordersArray);
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      setOrders([]);
+    } finally {
+      setLoading(false);
     }
-    
-    // Debug: Check if orders have items when you click on them
-    console.log('Orders loaded:', ordersArray);
-    setOrders(ordersArray);
-  } catch (error) {
-    console.error('Failed to fetch orders:', error);
-    setOrders([]);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
+  const fetchCustomers = async () => {
+    try {
+      const response = await customerService.getAll();
+      const customersArray = response?.data || (Array.isArray(response) ? response : []);
+      setCustomers(customersArray);
+    } catch (error) {
+      console.error('Failed to fetch customers:', error);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const response = await productService.getAll();
+      const productsArray = response?.data || (Array.isArray(response) ? response : []);
+      setProducts(productsArray);
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    }
+  };
 
   const getStatusColor = (status) => {
     const colors = {
@@ -60,6 +88,7 @@ export default function Orders() {
       fetchOrders();
     } catch (error) {
       console.error('Failed to update status:', error);
+      alert('Failed to update status: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -69,23 +98,91 @@ export default function Orders() {
   );
 
   const viewOrder = async (order) => {
-  // Fetch the full order details with items
-  try {
-    const fullOrder = await orderService.getById(order.OrderID);
-    console.log('Full order details:', fullOrder);
-    console.log('Order items:', fullOrder.items);
-    setSelectedOrder(fullOrder);
-  } catch (error) {
-    console.error('Failed to fetch order details:', error);
-    setSelectedOrder(order); // Fallback to basic order data
-  }
-};
+    try {
+      const fullOrder = await orderService.getById(order.OrderID);
+      console.log('Full order details:', fullOrder);
+      console.log('Order items:', fullOrder.items);
+      setSelectedOrder(fullOrder);
+    } catch (error) {
+      console.error('Failed to fetch order details:', error);
+      setSelectedOrder(order);
+    }
+  };
+
+  const addOrderItem = () => {
+    setFormData({
+      ...formData,
+      items: [...formData.items, { productId: '', quantity: 1, unitPrice: 0 }]
+    });
+  };
+
+  const removeOrderItem = (index) => {
+    const newItems = formData.items.filter((_, i) => i !== index);
+    setFormData({ ...formData, items: newItems });
+  };
+
+  const updateOrderItem = (index, field, value) => {
+    const newItems = [...formData.items];
+    newItems[index][field] = value;
+    
+    if (field === 'productId') {
+      const selectedProduct = products.find(p => p.ProductID === parseInt(value));
+      if (selectedProduct) {
+        newItems[index].unitPrice = selectedProduct.SellingPrice;
+      }
+    }
+    
+    setFormData({ ...formData, items: newItems });
+  };
+
+  const calculateTotal = () => {
+    return formData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+  };
+
+  const handleCreateOrder = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.customerId) {
+      alert('Please select a customer');
+      return;
+    }
+    
+    if (formData.items.length === 0 || !formData.items[0].productId) {
+      alert('Please add at least one product');
+      return;
+    }
+    
+    try {
+      const orderData = {
+        customerId: parseInt(formData.customerId),
+        items: formData.items.map(item => ({
+          productId: parseInt(item.productId),
+          quantity: parseInt(item.quantity),
+          unitPrice: parseFloat(item.unitPrice)
+        }))
+      };
+      
+      await orderService.create(orderData);
+      setShowCreateModal(false);
+      setFormData({ customerId: '', items: [{ productId: '', quantity: 1, unitPrice: 0 }] });
+      fetchOrders();
+      alert('Order created successfully!');
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      alert('Failed to create order: ' + (error.response?.data?.message || error.message));
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Orders</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Track and manage customer orders</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Orders</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Track and manage customer orders</p>
+        </div>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="h-4 w-4 mr-2" /> Add Order
+        </Button>
       </div>
 
       <Card>
@@ -131,14 +228,14 @@ export default function Orders() {
                         <select
                           value={order.Status}
                           onChange={(e) => updateStatus(order.OrderID, e.target.value)}
-                          className={`px-2 py-1 rounded-full text-xs font-medium border-0 ${getStatusColor(order.Status)}`}
+                          className={`px-2 py-1 rounded-full text-xs font-medium border-0 dark:bg-gray-800 dark:text-gray-100 ${getStatusColor(order.Status)}`}
                         >
-                          <option value="Pending">Pending</option>
-                          <option value="Confirmed">Confirmed</option>
-                          <option value="Shipped">Shipped</option>
-                          <option value="Delivered">Delivered</option>
-                          <option value="Cancelled">Cancelled</option>
-                          <option value="Returned">Returned</option>
+                          <option value="Pending" className="dark:bg-gray-800">Pending</option>
+                          <option value="Confirmed" className="dark:bg-gray-800">Confirmed</option>
+                          <option value="Shipped" className="dark:bg-gray-800">Shipped</option>
+                          <option value="Delivered" className="dark:bg-gray-800">Delivered</option>
+                          <option value="Cancelled" className="dark:bg-gray-800">Cancelled</option>
+                          <option value="Returned" className="dark:bg-gray-800">Returned</option>
                         </select>
                       </td>
                       <td className="px-4 py-3 text-right font-medium">
@@ -162,7 +259,6 @@ export default function Orders() {
         </CardContent>
       </Card>
 
-      {/* Order Details Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -217,6 +313,85 @@ export default function Orders() {
                 </table>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Create New Order</h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>✕</Button>
+            </div>
+            
+            <form onSubmit={handleCreateOrder} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Customer</label>
+                <select
+                  className="w-full h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={formData.customerId}
+                  onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+                  required
+                >
+                  <option value="" className="dark:bg-gray-800">Select Customer</option>
+                  {customers.map(c => (
+                    <option key={c.CustomerID} value={c.CustomerID} className="dark:bg-gray-800">
+                      {c.CustomerName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1 block">Order Items</label>
+                {formData.items.map((item, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <select
+                      className="flex-1 h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                      value={item.productId}
+                      onChange={(e) => updateOrderItem(index, 'productId', e.target.value)}
+                      required
+                    >
+                      <option value="" className="dark:bg-gray-800">Select Product</option>
+                      {products.map(p => (
+                        <option key={p.ProductID} value={p.ProductID} className="dark:bg-gray-800">
+                          {p.ProductName} - ${p.SellingPrice}
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      type="number"
+                      placeholder="Qty"
+                      className="w-24"
+                      value={item.quantity}
+                      onChange={(e) => updateOrderItem(index, 'quantity', e.target.value)}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeOrderItem(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={addOrderItem}>
+                  Add Item
+                </Button>
+              </div>
+
+              <div className="pt-4 border-t">
+                <p className="text-right font-bold text-lg">Total: ${calculateTotal().toFixed(2)}</p>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button type="submit" className="flex-1">Create Order</Button>
+                <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>Cancel</Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

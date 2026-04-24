@@ -72,6 +72,7 @@ router.get ('/orders',           authenticate, getOrders);
 router.get ('/orders/:id',       authenticate, getOrderById);
 router.post('/orders',           authenticate, createOrder);
 router.put ('/orders/:id/status',authenticate, authorize('Admin', 'Manager'), updateOrderStatus);
+router.patch('/orders/:id/status', authenticate, updateOrderStatus);
 
 // ── PAYMENTS ──────────────────────────────────────────────
 router.get('/orders/:orderId/payments', authenticate, getPaymentsByOrder);

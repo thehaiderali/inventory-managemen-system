@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { connectDB, sql } from '../config/db.js';
 
 // POST /api/auth/register
 export const register = async (req, res) => {
@@ -10,16 +11,13 @@ export const register = async (req, res) => {
     if (!username || !email || !password)
       return res.status(400).json({ message: 'Username, email and password are required' });
 
-    // NEW: trim and lowercase for consistent storage
     const cleanEmail = email.trim().toLowerCase();
     const cleanUsername = username.trim();
 
-    // NEW: basic email format check
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(cleanEmail))
       return res.status(400).json({ message: 'Invalid email format' });
 
-    // NEW: role whitelist — only accept known roles
     const allowedRoles = ['Admin', 'Manager', 'Staff'];
     const assignedRole = role && allowedRoles.includes(role) ? role : 'Staff';
 
@@ -29,6 +27,18 @@ export const register = async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({ username: cleanUsername, email: cleanEmail, passwordHash, role: assignedRole });
+
+    // Create Staff record for the new user
+    const pool = await connectDB();
+    await pool.request()
+      .input('StaffName', sql.VarChar, cleanUsername)
+      .input('Role', sql.VarChar, assignedRole)
+      .input('Email', sql.VarChar, cleanEmail)
+      .input('UserID', sql.Int, user.UserID)
+      .query(`
+        INSERT INTO Staff (StaffName, Role, Email, UserID, HireDate)
+        VALUES (@StaffName, @Role, @Email, @UserID, GETDATE())
+      `);
 
     res.status(201).json({ message: 'User registered', user });
   } catch (err) {
