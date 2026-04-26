@@ -10,6 +10,8 @@ import Categories from './pages/Categories';
 import Suppliers from './pages/Suppliers';
 import Warehouses from './pages/Warehouses';
 import Customers from './pages/Customers';
+import Payments from './pages/Payments';
+import Returns from './pages/Returns';
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -31,6 +33,8 @@ function App() {
         <Route path="suppliers" element={<Suppliers />} />
         <Route path="warehouses" element={<Warehouses />} />
         <Route path="customers" element={<Customers />} />
+        <Route path='payments' element={<Payments/>}/>
+        <Route path='returns' element={<Returns/>}/>
       </Route>
     </Routes>
   );

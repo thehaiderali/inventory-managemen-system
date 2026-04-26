@@ -118,10 +118,10 @@ const Customer = {
     const result = await pool.request().input('CustomerID', sql.Int, id).query(`SELECT * FROM Customers WHERE CustomerID = @CustomerID`);
     return result.recordset[0];
   },
-  async create({ customerName, phone, email, address }) {
+  async create({ name, phone, email, address }) {
     const pool = await connectDB();
     const result = await pool.request()
-      .input('CustomerName', sql.VarChar, customerName)
+      .input('CustomerName', sql.VarChar, name)
       .input('Phone',        sql.VarChar, phone)
       .input('Email',        sql.VarChar, email)
       .input('Address',      sql.VarChar, address)

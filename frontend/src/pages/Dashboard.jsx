@@ -41,12 +41,15 @@ export default function Dashboard() {
       const orders = ordersRes.data || [];
       const customers = customersRes.data || [];
       const inventory = inventoryRes.data || [];
-
       const lowStockItems = inventory.filter(item => item.Quantity <= item.ReorderLevel);
-      const pendingOrders = orders.filter(order => order.Status === 'Pending');
+     const pendingOrders = orders.filter(
+  order => order.Status?.toLowerCase() === 'pending'
+);
+
+  console.log('Order statuses:', orders.map(o => o.Status));
       const totalRevenue = orders
-        .filter(order => order.Status === 'Completed')
-        .reduce((sum, order) => sum + (order.TotalAmount || 0), 0);
+      .filter(order => order.Status?.toLowerCase() === 'completed')
+       .reduce((sum, order) => sum + (order.TotalAmount || 0), 0);
 
       setStats({
         products: products.length,

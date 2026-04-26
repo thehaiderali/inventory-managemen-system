@@ -16,7 +16,8 @@ export const userService = createService('users');
 export const warehouseService = createService('warehouses');
 export const inventoryService = {
   getAll: () => api.get('/inventory').then(res => res.data),
-  getLowStock: () => api.get('/inventory/low-stock').then(res => res.data),
+  // ✅ FIX: Changed '/inventory/low-stock' → '/inventory/lowstock' to match backend route
+  getLowStock: () => api.get('/inventory/lowstock').then(res => res.data),
   adjust: (data) => api.post('/inventory/adjust', data).then(res => res.data),
 };
 export const orderService = {
@@ -26,8 +27,9 @@ export const orderService = {
   updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }).then(res => res.data),
 };
 export const paymentService = {
-  getByOrder: (orderId) => api.get(`/payments/order/${orderId}`).then(res => res.data),
+  getByOrder: (orderId) => api.get(`/orders/${orderId}/payments`).then(res => res.data),
   create: (data) => api.post('/payments', data).then(res => res.data),
+  updateStatus: (id, status) => api.put(`/payments/${id}/status`, { status }).then(res => res.data),
 };
 export const returnService = {
   getAll: () => api.get('/returns').then(res => res.data),

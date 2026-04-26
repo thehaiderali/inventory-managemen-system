@@ -236,6 +236,7 @@ export default function Orders() {
                           <option value="Delivered" className="dark:bg-gray-800">Delivered</option>
                           <option value="Cancelled" className="dark:bg-gray-800">Cancelled</option>
                           <option value="Returned" className="dark:bg-gray-800">Returned</option>
+                          <option value="Completed" className="dark:bg-gray-800">Completed</option>
                         </select>
                       </td>
                       <td className="px-4 py-3 text-right font-medium">

@@ -14,7 +14,8 @@ import {
   Moon,
   Sun,
   Menu,
-  X
+  X,
+  CreditCard
 } from 'lucide-react';
 import { useTheme } from '@/hooks/theme';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ const navItems = [
   { path: '/categories', name: 'Categories', icon: Tags },
   { path: '/suppliers', name: 'Suppliers', icon: Truck },
   { path: '/warehouses', name: 'Warehouses', icon: Warehouse },
+  { path: '/payments', name: 'Payments', icon: CreditCard },
   { path: '/returns', name: 'Returns', icon: ArrowLeftRight },
   { path: '/users', name: 'Users', icon: UserCog },
 ];
