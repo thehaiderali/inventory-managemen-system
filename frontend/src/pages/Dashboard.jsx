@@ -65,18 +65,18 @@ export default function Dashboard() {
   };
 
   const statCards = [
-    { title: 'Total Products', value: stats.products, icon: Package, color: 'bg-blue-500' },
-    { title: 'Total Orders', value: stats.orders, icon: ShoppingCart, color: 'bg-green-500' },
-    { title: 'Customers', value: stats.customers, icon: Users, color: 'bg-purple-500' },
-    { title: 'Low Stock Items', value: stats.lowStock, icon: AlertCircle, color: 'bg-red-500' },
-    { title: 'Revenue', value: `$${stats.revenue.toFixed(2)}`, icon: DollarSign, color: 'bg-yellow-500' },
-    { title: 'Pending Orders', value: stats.pendingOrders, icon: TrendingUp, color: 'bg-orange-500' },
+    { title: 'Total Products', value: stats.products, icon: Package },
+    { title: 'Total Orders', value: stats.orders, icon: ShoppingCart },
+    { title: 'Customers', value: stats.customers, icon: Users },
+    { title: 'Low Stock Items', value: stats.lowStock, icon: AlertCircle },
+    { title: 'Revenue', value: `$${stats.revenue.toFixed(2)}`, icon: DollarSign },
+    { title: 'Pending Orders', value: stats.pendingOrders, icon: TrendingUp },
   ];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -84,8 +84,8 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Welcome back! Here's what's happening today.</p>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">Welcome back! Here's what's happening today.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -96,11 +96,11 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.title}</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{stat.value}</p>
+                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                    <p className="text-2xl font-bold mt-2">{stat.value}</p>
                   </div>
-                  <div className={`p-3 rounded-full ${stat.color} bg-opacity-10`}>
-                    <Icon className={`h-6 w-6 ${stat.color.replace('bg-', 'text-')}`} />
+                  <div className="p-3 rounded-full bg-primary/10">
+                    <Icon className="h-6 w-6 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -115,11 +115,11 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           {recentOrders.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No orders yet</p>
+            <p className="text-muted-foreground text-center py-8">No orders yet</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-900">
+                <thead className="bg-muted/50">
                   <tr>
                     <th className="px-4 py-3 text-left">Order ID</th>
                     <th className="px-4 py-3 text-left">Date</th>
@@ -129,7 +129,7 @@ export default function Dashboard() {
                 </thead>
                 <tbody>
                   {recentOrders.map((order) => (
-                    <tr key={order.OrderID} className="border-t border-gray-200 dark:border-gray-800">
+                    <tr key={order.OrderID} className="border-t border-border">
                       <td className="px-4 py-3">#{order.OrderID}</td>
                       <td className="px-4 py-3">{new Date(order.OrderDate).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
@@ -140,7 +140,7 @@ export default function Dashboard() {
                         }`}>
                           {order.Status}
                         </span>
-                       </td>
+                      </td>
                       <td className="px-4 py-3 text-right">${(order.TotalAmount || 0).toFixed(2)}</td>
                     </tr>
                   ))}

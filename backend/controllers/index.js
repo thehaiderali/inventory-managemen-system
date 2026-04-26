@@ -155,7 +155,8 @@ export const getCategoryById  = async (req, res) => { try { const c = await Cate
 
 export const createCategory = async (req, res) => {
   try {
-    const missing = validateRequired(req.body, ['name']);
+    console.log("Request Body : ",req.body)
+    const missing = validateRequired(req.body, ['categoryName']);
     if (missing) return res.status(400).json({ message: `Missing required fields: ${missing.join(', ')}` });
     res.status(201).json(await Category.create(req.body));
   } catch (err) { res.status(500).json({ message: err.message }); }

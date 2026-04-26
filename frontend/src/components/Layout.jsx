@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router';
 import { 
   LayoutDashboard, 
   Package, 
@@ -46,12 +46,12 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <aside className={`fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col ${sidebarOpen ? 'w-64' : 'w-16'}`}>
+    <div className="min-h-screen bg-background">
+      <aside className={`fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-card border-r border-border flex flex-col ${sidebarOpen ? 'w-64' : 'w-16'}`}>
         
-        <div className="flex h-16 items-center justify-between px-3 border-b border-gray-200 dark:border-gray-800 shrink-0">
+        <div className="flex h-16 items-center justify-between px-3 border-b border-border shrink-0">
           {sidebarOpen && (
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="text-xl font-bold text-primary">
               IMS Pro
             </span>
           )}
@@ -75,8 +75,8 @@ export default function Layout() {
                 onClick={() => navigate(item.path)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors ${
                   isActive 
-                    ? 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border-r-2 border-blue-600' 
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-primary/10 text-primary border-r-2 border-primary' 
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 } ${!sidebarOpen && 'justify-center'}`}
               >
                 <Icon className="h-5 w-5 shrink-0" />
@@ -86,10 +86,10 @@ export default function Layout() {
           })}
         </nav>
 
-        <div className="border-t border-gray-200 dark:border-gray-800 p-4 shrink-0">
+        <div className="border-t border-border p-4 shrink-0">
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors mb-3 ${!sidebarOpen && 'flex-col'}`}
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg bg-muted hover:bg-accent transition-colors mb-3 ${!sidebarOpen && 'flex-col'}`}
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             {sidebarOpen && <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
@@ -97,7 +97,7 @@ export default function Layout() {
           
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${!sidebarOpen && 'flex-col'}`}
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors ${!sidebarOpen && 'flex-col'}`}
           >
             <LogOut className="h-4 w-4" />
             {sidebarOpen && <span>Logout</span>}

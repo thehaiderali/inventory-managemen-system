@@ -12,6 +12,7 @@ const Category = {
     return result.recordset[0];
   },
   async create({ categoryName, description }) {
+    console.log("Data : ",categoryName,description)
     const pool = await connectDB();
     const result = await pool.request()
       .input('CategoryName', sql.VarChar, categoryName)
