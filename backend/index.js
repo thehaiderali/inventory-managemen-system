@@ -19,11 +19,25 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', routes);
 
-app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
-
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: err.message });
+// Fix schema constraint
+app.post('/api/fix-schema', async (req, res) => {
+  try {
+    const pool = await connectDB();
+    
+    // Drop and recreate Orders CHECK constraint
+    await pool.request().query(`
+      ALTER TABLE Orders DROP CONSTRAINT CK__Orders__Status__02FC7413
+    `);
+    
+    await pool.request().query(`
+      ALTER TABLE Orders ADD CONSTRAINT CK_Orders_Status 
+      CHECK (Status IN ('Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled', 'Returned', 'Completed'))
+    `);
+    
+    res.json({ message: 'Schema fixed - Completed status now allowed' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 connectDB().then(() => {

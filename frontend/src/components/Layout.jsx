@@ -41,6 +41,8 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  console.log('Current user:', user);
+  console.log('User role:', user.role);
 
   const handleLogout = () => {
     authService.logout();

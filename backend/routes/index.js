@@ -20,9 +20,9 @@ const router = Router();
 router.post('/auth/register', register);
 router.post('/auth/login',    login);
 
-// ── USERS  (Admin only) ───────────────────────────────────
-router.get   ('/users',              authenticate, authorize('Admin'), getUsers);
-router.get   ('/users/:id',          authenticate, authorize('Admin'), getUserById);
+// ── USERS  (any authenticated user) ───────────────────
+router.get   ('/users',              authenticate, getUsers);
+router.get   ('/users/:id',          authenticate, getUserById);
 router.put   ('/users/:id',          authenticate, authorize('Admin'), updateUser);
 router.delete('/users/:id',          authenticate, authorize('Admin'), deleteUser);
 router.put   ('/users/me/password',  authenticate, changePassword);
@@ -76,6 +76,7 @@ router.patch('/orders/:id/status', authenticate, updateOrderStatus);
 
 // ── PAYMENTS ──────────────────────────────────────────────
 router.get('/orders/:orderId/payments', authenticate, getPaymentsByOrder);
+router.get('/payments', authenticate, getPaymentsByOrder); // Get all payments
 router.post('/payments',                authenticate, createPayment);
 router.put ('/payments/:id/status',     authenticate, authorize('Admin', 'Manager'), updatePaymentStatus);
 

@@ -4,8 +4,12 @@ import User from '../models/User.js';
 export const getUsers = async (req, res) => {
   try {
     const users = await User.findAll();
+    console.log('Users found:', users);
     res.json(users);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) { 
+    console.error('getUsers error:', err);
+    res.status(500).json({ message: err.message }); 
+  }
 };
 
 export const getUserById = async (req, res) => {

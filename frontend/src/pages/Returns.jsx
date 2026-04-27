@@ -55,7 +55,8 @@ export default function Returns() {
   const [formError, setFormError]       = useState('');
   const [saving, setSaving]             = useState(false);
   const [orderItems, setOrderItems]     = useState([]);
-  const [itemsLoading, setItemsLoading] = useState(false);
+  const [itemsLoading, setItemsLoading]   = useState(false);
+  const [alreadyReturnedMap, setAlreadyReturnedMap] = useState({});
 
   // ── Fetch all ─────────────────────────────────────────
   const fetchAll = useCallback(async () => {
@@ -88,6 +89,7 @@ export default function Returns() {
   const handleOrderChange = async (orderId) => {
     setFormData(prev => ({ ...prev, orderId, productId: '', quantity: '', refundAmount: '' }));
     setOrderItems([]);
+    setAlreadyReturnedMap({});
     if (!orderId) return;
 
     setItemsLoading(true);
@@ -100,10 +102,28 @@ export default function Returns() {
         res?.data?.items      ||
         res?.data?.OrderItems ||
         [];
-      setOrderItems(Array.isArray(items) ? items.filter(Boolean) : []);
+      const itemsArray = Array.isArray(items) ? items.filter(Boolean) : [];
+      
+      // Fetch already returned quantities for each item
+      const returnsRes = await returnService.getAll();
+      const allReturns = Array.isArray(returnsRes?.data) ? returnsRes.data : returnsRes;
+      const returnedMap = {};
+      
+      if (Array.isArray(allReturns)) {
+        allReturns.forEach(r => {
+          if (r.OrderID === parseInt(orderId) || r.orderId === parseInt(orderId)) {
+            const pid = r.ProductID || r.productId;
+            returnedMap[pid] = (returnedMap[pid] || 0) + (parseInt(r.Quantity || r.quantity) || 0);
+          }
+        });
+      }
+      
+      setOrderItems(itemsArray);
+      setAlreadyReturnedMap(returnedMap);
     } catch (err) {
       console.error('Failed to load order items:', err);
       setOrderItems([]);
+      setAlreadyReturnedMap({});
     } finally {
       setItemsLoading(false);
     }
@@ -115,12 +135,16 @@ export default function Returns() {
       i => String(i.ProductID || i.productId) === String(productId)
     );
     const unitPrice = item?.UnitPrice || item?.Price || item?.price || 0;
+    const orderedQty = item?.Quantity || item?.quantity || 1;
+    const alreadyReturned = alreadyReturnedMap[productId] || 0;
+    const maxReturnable = orderedQty - alreadyReturned;
     const qty = formData.quantity ? parseInt(formData.quantity) : 1;
+    const returnQty = Math.min(qty, maxReturnable);
     setFormData(prev => ({
       ...prev,
       productId,
-      quantity: String(qty),
-      refundAmount: (unitPrice * qty).toFixed(2),
+      quantity: String(returnQty > 0 ? returnQty : 1),
+      refundAmount: (unitPrice * returnQty).toFixed(2),
     }));
   };
 
@@ -131,10 +155,14 @@ export default function Returns() {
       i => String(i.ProductID || i.productId) === String(formData.productId)
     );
     const unitPrice = item?.UnitPrice || item?.Price || item?.price || 0;
+    const orderedQty = item?.Quantity || item?.quantity || 0;
+    const alreadyReturned = alreadyReturnedMap[formData.productId] || 0;
+    const maxReturnable = orderedQty - alreadyReturned;
+    const validQty = Math.min(qty, maxReturnable);
     setFormData(prev => ({
       ...prev,
       quantity: val,
-      refundAmount: unitPrice > 0 ? (unitPrice * qty).toFixed(2) : prev.refundAmount,
+      refundAmount: unitPrice > 0 ? (unitPrice * validQty).toFixed(2) : prev.refundAmount,
     }));
   };
 
@@ -147,6 +175,20 @@ export default function Returns() {
     if (!formData.productId)                                    { setFormError('Please select a product.');         return; }
     if (!formData.quantity || parseInt(formData.quantity) <= 0) { setFormError('Quantity must be greater than 0.'); return; }
     if (!formData.reason)                                       { setFormError('Please provide a reason.');         return; }
+
+    // Validate against returnable quantity
+    const selectedItem = orderItems.find(
+      i => String(i.ProductID || i.productId) === String(formData.productId)
+    );
+    const orderedQty = selectedItem?.Quantity || selectedItem?.quantity || 0;
+    const alreadyReturned = alreadyReturnedMap[formData.productId] || 0;
+    const remainingReturnable = orderedQty - alreadyReturned;
+    const requestedQty = parseInt(formData.quantity);
+
+    if (requestedQty > remainingReturnable) {
+      setFormError(`Cannot return more than ${remainingReturnable} items. Already returned: ${alreadyReturned}, Ordered: ${orderedQty}`);
+      return;
+    }
 
     setSaving(true);
     try {
@@ -161,22 +203,28 @@ export default function Returns() {
       // returnService.create() does .then(res => res.data)
       // so `response` is the raw backend object: { ReturnID, OrderID, ProductID, ... }
       const response = await returnService.create(payload);
+      console.log('API Response raw:', response);
+      
+      if (!response) {
+        setFormError('Failed to create return. Please try again.');
+        setSaving(false);
+        return;
+      }
 
-      // Normalize to a consistent display shape
-      // (handles both PascalCase from DB and camelCase fallbacks)
+      // Normalize with all possible field names
       const selectedItem = orderItems.find(
         i => String(i.ProductID || i.productId) === String(payload.productId)
       );
       const newReturn = {
-        ReturnID:     response?.ReturnID     || response?.id           || Date.now(),
-        OrderID:      response?.OrderID      || payload.orderId,
-        ProductID:    response?.ProductID    || payload.productId,
-        ProductName:  response?.ProductName  || selectedItem?.ProductName || selectedItem?.name || `Product #${payload.productId}`,
-        Quantity:     response?.Quantity     || payload.quantity,
-        Reason:       response?.Reason       || payload.reason,
+        ReturnID:     response?.ReturnID  || response?.returnId || response?.id   || Date.now(),
+        OrderID:      response?.OrderID   || response?.orderId || payload.orderId,
+        ProductID:    response?.ProductID || response?.productId || payload.productId,
+        ProductName:  response?.ProductName || selectedItem?.ProductName || selectedItem?.name || `Product #${payload.productId}`,
+        Quantity:     response?.Quantity  || payload.quantity,
+        Reason:       response?.Reason    || payload.reason,
         RefundAmount: response?.RefundAmount || payload.refundAmount,
-        Status:       response?.Status       || 'pending',
-        ReturnDate:   response?.ReturnDate   || response?.CreatedAt    || new Date().toISOString(),
+        Status:       response?.Status    || 'pending',
+        ReturnDate:   response?.ReturnDate || response?.CreatedAt || new Date().toISOString(),
       };
 
       // ✅ Optimistic prepend — no re-fetch, no race condition
@@ -184,7 +232,6 @@ export default function Returns() {
       setShowModal(false);
       setFormData(EMPTY_FORM);
       setOrderItems([]);
-
     } catch (err) {
       console.error('Create return error:', err);
       setFormError(err.response?.data?.message || 'Failed to create return.');
@@ -214,6 +261,19 @@ export default function Returns() {
   const totalRefunded  = returns.reduce((s, r) => s + parseFloat(r.RefundAmount || r.refundAmount || 0), 0);
   const pendingCount   = returns.filter(r => (r.Status || r.status || 'pending').toLowerCase() === 'pending').length;
   const completedCount = returns.filter(r => (r.Status || r.status || '').toLowerCase() === 'completed').length;
+
+  const currentItem = orderItems.find(i => String(i.ProductID || i.productId) === String(formData.productId));
+  const currentOrderedQty = currentItem?.Quantity || currentItem?.quantity || 0;
+  const currentAlreadyReturned = alreadyReturnedMap[formData.productId] || 0;
+  const maxReturnableQty = currentOrderedQty - currentAlreadyReturned;
+  let showFullyReturnedMsg = false;
+  if (orderItems.length > 0) {
+    showFullyReturnedMsg = orderItems.every(function(item) {
+      const qty = item.Quantity || item.quantity || 0;
+      const returned = alreadyReturnedMap[item.ProductID || item.productId] || 0;
+      return (qty - returned) <= 0;
+    });
+  }
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -300,7 +360,7 @@ export default function Returns() {
                 </thead>
                 <tbody>
                   {filtered.map((ret, idx) => {
-                    const returnId    = ret.ReturnID    || ret.id        || idx;
+                    const returnId    = ret.ReturnID    || ret.returnId || ret.id        || idx;
                     const orderId     = ret.OrderID     || ret.orderId;
                     const productName = ret.ProductName || ret.productName || `Product #${ret.ProductID || ret.productId || '?'}`;
                     const qty         = ret.Quantity    || ret.quantity  || 0;
@@ -413,13 +473,16 @@ export default function Returns() {
                       onChange={e => handleProductSelect(e.target.value)}
                     >
                       <option value="">Select a product…</option>
-                      {orderItems.map(item => {
+                      {orderItems.map(function(item) {
                         const pid  = item.ProductID  || item.productId;
-                        const name = item.ProductName || item.name || `Product #${pid}`;
+                        const name = item.ProductName || item.name || "Product #" + pid;
                         const qty  = item.Quantity    || item.quantity;
+                        const alreadyReturned = alreadyReturnedMap[pid] || 0;
+                        const returnable = qty - alreadyReturned;
+                        if (returnable <= 0) return null;
                         return (
                           <option key={pid} value={pid}>
-                            {name} (qty: {qty})
+                            {name} (ordered: {qty}, returnable: {returnable})
                           </option>
                         );
                       })}
@@ -440,6 +503,9 @@ export default function Returns() {
                   value={formData.quantity}
                   onChange={e => handleQuantityChange(e.target.value)}
                 />
+                {formData.productId && maxReturnableQty > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">Max returnable: {maxReturnableQty}</p>
+                )}
               </div>
 
               {/* Reason */}

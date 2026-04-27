@@ -1,16 +1,7 @@
 import { useEffect, useState } from 'react';
-import { 
-  Package, 
-  ShoppingCart, 
-  Users, 
-  TrendingUp, 
-  AlertCircle,
-  DollarSign,
-  Truck,
-  Warehouse
-} from 'lucide-react';
+import { Package, ShoppingCart, Users, AlertCircle, DollarSign, TrendingUp } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { productService, orderService, customerService, inventoryService } from '../services';
+import { productService, orderService, customerService, inventoryService, paymentService } from '../services';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -28,28 +19,29 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
+const fetchDashboardData = async () => {
     try {
-      const [productsRes, ordersRes, customersRes, inventoryRes] = await Promise.all([
+      const [productsRes, ordersRes, customersRes, inventoryRes, paymentsRes] = await Promise.all([
         productService.getAll(),
         orderService.getAll(),
         customerService.getAll(),
-        inventoryService.getAll()
+        inventoryService.getAll(),
+        paymentService.getAll()
       ]);
 
       const products = productsRes.data || [];
       const orders = ordersRes.data || [];
       const customers = customersRes.data || [];
       const inventory = inventoryRes.data || [];
+      const payments = paymentsRes.data || paymentsRes || [];
       const lowStockItems = inventory.filter(item => item.Quantity <= item.ReorderLevel);
-     const pendingOrders = orders.filter(
-  order => order.Status?.toLowerCase() === 'pending'
-);
+      const pendingOrders = orders.filter(
+        order => order.Status?.toLowerCase() === 'pending'
+      );
 
-  console.log('Order statuses:', orders.map(o => o.Status));
-      const totalRevenue = orders
-      .filter(order => order.Status?.toLowerCase() === 'completed')
-       .reduce((sum, order) => sum + (order.TotalAmount || 0), 0);
+      const totalRevenue = payments
+        .filter(p => p.Status?.toLowerCase() === 'completed')
+        .reduce((sum, p) => sum + (parseFloat(p.Amount) || 0), 0);
 
       setStats({
         products: products.length,

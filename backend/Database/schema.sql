@@ -89,7 +89,7 @@ CREATE TABLE Orders (
     CustomerID INT,
     StaffID INT,
     OrderDate DATETIME DEFAULT GETDATE(),
-    Status VARCHAR(20) DEFAULT 'Pending' CHECK (Status IN ('Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled', 'Returned')),
+    Status VARCHAR(20) DEFAULT 'Pending' CHECK (Status IN ('Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled', 'Returned', 'Completed')),
     DiscountAmount DECIMAL(10,2) DEFAULT 0.00 CHECK (DiscountAmount >= 0),
     TaxRate DECIMAL(5,4) DEFAULT 0.0000 CHECK (TaxRate BETWEEN 0 AND 1),
     TotalAmount DECIMAL(10,2),

@@ -229,6 +229,11 @@ const Payment = {
       .query(`SELECT * FROM Payments WHERE OrderID = @OrderID`);
     return result.recordset;
   },
+  async findAll() {
+    const pool = await connectDB();
+    const result = await pool.request().query(`SELECT * FROM Payments`);
+    return result.recordset;
+  },
   async create({ orderId, paymentMethod, amount, status = 'Pending' }) {
     const pool = await connectDB();
     const result = await pool.request()

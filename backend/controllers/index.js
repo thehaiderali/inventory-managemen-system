@@ -890,6 +890,7 @@ export const createReturn = async (req, res) => {
       });
 
     const returnData = await Return.create({ orderItemId, quantity, reason, refundAmount });
+    console.log('Return created in DB:', returnData);
     Inventory.adjust({
       productId,
       warehouseId: null,

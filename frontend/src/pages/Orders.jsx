@@ -77,7 +77,8 @@ export default function Orders() {
       'Shipped': 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
       'Delivered': 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
       'Cancelled': 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
-      'Returned': 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+      'Returned': 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
+      'Completed': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
     };
     return colors[status] || 'bg-gray-100 text-gray-700';
   };

@@ -2,11 +2,15 @@ import { connectDB, sql } from '../config/db.js';
 
 const User = {
   async findAll() {
-    const pool = await connectDB();
-    const result = await pool.request().query(`
-      SELECT UserID, Username, Email, Role, IsActive, CreatedAt FROM Users
-    `);
-    return result.recordset;
+    try {
+      const pool = await connectDB();
+      const result = await pool.request().query(`SELECT UserID, Username, Email, Role, IsActive, CreatedAt FROM Users`);
+      console.log('DB query result:', result.recordset);
+      return result.recordset;
+    } catch (err) {
+      console.error('User.findAll error:', err);
+      return [];
+    }
   },
 
   async findById(id) {
@@ -70,6 +74,17 @@ const User = {
 
   async delete(id) {
     const pool = await connectDB();
+    
+    // Check if user is linked to Staff
+    const staffCheck = await pool.request()
+      .input('UserID', sql.Int, id)
+      .query(`SELECT StaffID FROM Staff WHERE UserID = @UserID`);
+    
+    if (staffCheck.recordset.length > 0) {
+      throw new Error('Cannot delete user that is linked to Staff. Remove Staff link first.');
+    }
+    
+    // Safe to delete
     await pool.request()
       .input('UserID', sql.Int, id)
       .query(`DELETE FROM Users WHERE UserID = @UserID`);

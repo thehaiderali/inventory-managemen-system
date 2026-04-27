@@ -27,6 +27,7 @@ export const orderService = {
   updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }).then(res => res.data),
 };
 export const paymentService = {
+  getAll: () => api.get('/payments').then(res => res.data),
   getByOrder: (orderId) => api.get(`/orders/${orderId}/payments`).then(res => res.data),
   create: (data) => api.post('/payments', data).then(res => res.data),
   updateStatus: (id, status) => api.put(`/payments/${id}/status`, { status }).then(res => res.data),
